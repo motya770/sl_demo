@@ -20,16 +20,24 @@ class DomainCounterController:
         domains = self.domain_counter_service.get_top_10_domains_last_hours()
         return json({"domains": domains})
 
+    def add_domains(self, request):
+        self.domain_counter_service.add_domains()
+        return json({"result": "domains added"})
+
 
 def create_domain_counter_controller(domain_counter_controller: DomainCounterController, app):
     domain_counter_bp = Blueprint('domain_counter')
 
-    @domain_counter_bp.route('/domains/top-10-domains-minutes')
+    @domain_counter_bp.route('/domains/top-10-domains-minutes', methods=['GET'])
     def decorated_domain_counter_minutes(request):
         return domain_counter_controller.get_top_10_domains_last_minutes(request)
 
-    @domain_counter_bp.route('/domains/top-10-domains-hours')
+    @domain_counter_bp.route('/domains/top-10-domains-hours', methods=['GET'])
     def decorated_domain_counter_hours(request):
         return domain_counter_controller.get_top_10_domains_last_hours(request)
+
+    @domain_counter_bp.route('/domains', methods=['PUT'])
+    def decorated_domain_counter_add_domains(request):
+        return domain_counter_controller.add_domains(request)
 
     app.blueprint(domain_counter_bp)
