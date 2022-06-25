@@ -44,7 +44,7 @@ class DomainCounterService:
             self.minute_queue.put(-counter_snapshot.round_min_count, min_domains)
         min_domains[domain_name] = domain_name
 
-    def add_to_minute_queue(self, domain_name: str, counter_snapshot: CounterShapshot):
+    def add_to_hour_queue(self, domain_name: str, counter_snapshot: CounterShapshot):
         prev_hour_domains: Dict = self.hour_queue.get(-counter_snapshot.prev_round_hour)
         # remove from old position in queue for previous calculation
         if prev_hour_domains is not None and len(prev_hour_domains) > 0:
