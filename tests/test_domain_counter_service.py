@@ -1,6 +1,10 @@
 
 
 def test_add_domains():
+    values = {"timestamp": 1608102631, "domains": {"A": 3, "B": 4}}
+    timestamp = values["timestamp"]
+    domains = values["domains"]
+
     domain_counter_service = DomainCounterService()
     domain_counter_service.add_domains()
     assert domain_counter_service.minute_queue.qsize() == 60

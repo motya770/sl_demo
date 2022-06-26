@@ -1,6 +1,7 @@
 from typing import List, Dict
 from injector import singleton, inject
 from utils import DateUtils
+from model import DomainsCounter
 
 
 @singleton
@@ -9,14 +10,10 @@ class DomainCounterService:
     @inject
     def __init__(self):
         # dict by time with dict by domain name with count
-        self.min_domain_counter_holder = {str: Dict[str, int]}
-        self.hour_domain_counter_holder = {str: Dict[str, int]}
+        self.min_domain_counter_holder = {str: DomainsCounter}
+        self.hour_domain_counter_holder = {str: DomainsCounter}
 
-    def add_domains(self, domains: List[str]):
-        values = {"timestamp": 1608102631, "domains": {"A": 3, "B": 4}}
-        timestamp = values["timestamp"]
-        domains = values["domains"]
-
+    def add_domains(self, timestamp: int, domains: List[str]):
         min_key = DateUtils.current_minute_key(timestamp)
         hour_key = DateUtils.current_hour_key(timestamp)
 
@@ -28,41 +25,31 @@ class DomainCounterService:
                              count=count, domain_name=domain_name)
 
     def _add_domain(self, time_key: str, domain_counter_holder_dict: Dict, count: int, domain_name: str):
-        counter_dict = domain_counter_holder_dict.get(time_key, None)
-        if counter_dict is None:
-            counter_dict = {}
-            self.domain_counter_holder_dict[time_key] = counter_dict
-        domain_count = counter_dict.get(domain_name, 0)
-        counter_dict[domain_name] = domain_count + count
+        domains_counter: DomainsCounter = domain_counter_holder_dict.get(time_key, None)
+        if domains_counter is None:
+            domains_counter = DomainsCounter()
+            self.domain_counter_holder_dict[time_key] = domains_counter
+        domains_counter.update_domain_count(domain_name, count)
 
-    # 0 n log n - only for slice of 1 minute
-    def _get_top_domains_last_minute(self, limit: int):
-        min_counter_dict = self.min_domain_counter_holder.get(DateUtils.round_minute_key(), None)
-        return self._sorted_dict_by_limit(limit, min_counter_dict)
-
-    # n log n
-    def _sorted_dict_by_limit(self, limit: 10, counter_dict: Dict[str, int]):
-        if counter_dict is None:
+    # 0(1)
+    def _get_top_domains(self, limit: int, domain_counter_holder_dict: Dict, time_key: str):
+        domain_counter: DomainsCounter = domain_counter_holder_dict.get(time_key)
+        if domain_counter is None:
             return None
+        return domain_counter.get_top_domains(limit)
 
-        result = []
-        # sort by value (by count for specific domain)
-        for k, v in sorted(counter_dict.items(), key=lambda item: item[1]):
-            result.append({k, v})
-            if len(result) == limit:
-                break
+    def get_top_domains_last_hour(self, limit: int):
+        hour_key = DateUtils.round_hour_key()
+        return self._get_top_domains(limit, self.hour_domain_counter_holder, hour_key)
 
-        return result
-
-    # 0 n log n - only for slice of 1 minute
-    def _get_top_domains_last_hour(self, limit: int):
-        hour_counter_dict = self.hour_domain_counter_holder.get(DateUtils.round_hour_key())
-        return self._sorted_dict_by_limit(limit, hour_counter_dict)
+    def get_top_domains_last_minute(self, limit: int):
+        minute_key = DateUtils.round_minute_key()
+        return self._get_top_domains(limit, self.min_domain_counter_holder, minute_key)
 
     # 0(1)
     def get_top_10_domains_last_hour(self) -> List:
-        return self._get_top_domains_last_hour(10)
+        return self.get_top_domains_last_hour(10)
 
     # 0(1)
     def get_top_10_domains_last_minute(self) -> List:
-        return self._get_top_domains_last_minute(10)
+        return self.get_top_domains_last_minute(10)

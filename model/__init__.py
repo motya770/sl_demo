@@ -1,2 +1,1 @@
-from .domain_counter import DomainCounter
-
+from .domains_counter import DomainsCounter
