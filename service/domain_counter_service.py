@@ -8,31 +8,32 @@ class DomainCounterService:
 
     @inject
     def __init__(self):
-        self.min_domain_counter_holder = {}
-        self.hour_domain_counter_holder = {}
+        # dict by time with dict by domain name with count
+        self.min_domain_counter_holder = {str: Dict[str, int]}
+        self.hour_domain_counter_holder = {str: Dict[str, int]}
 
     def add_domains(self, domains: List[str]):
         values = {"timestamp": 1608102631, "domains": {"A": 3, "B": 4}}
         timestamp = values["timestamp"]
         domains = values["domains"]
+
+        min_key = DateUtils.current_minute_key(timestamp)
+        hour_key = DateUtils.current_hour_key(timestamp)
+
         for domain_name, count in domains.items():
-            min_key = DateUtils.current_minute_key(timestamp)
-            min_counter_dict = self.min_domain_counter_holder.get(min_key, None)
-            if min_counter_dict is None:
-                min_counter_dict = {}
-                self.min_domain_counter_holder[min_key] = min_counter_dict
+            self._add_domain(time_key=min_key, domain_counter_holder_dict=self.min_domain_counter_holder,
+                             count=count, domain_name=domain_name)
 
-            min_domain_count = min_counter_dict.get(domain_name, 0)
-            min_counter_dict[domain_name] = min_domain_count + count
+            self._add_domain(time_key=hour_key, domain_counter_holder_dict=self.hour_domain_counter_holder,
+                             count=count, domain_name=domain_name)
 
-            hour_key = DateUtils.current_hour_key(timestamp)
-            hour_counter_dict = self.hour_domain_counter_holder.get(hour_key, None)
-            if hour_counter_dict is None:
-                hour_counter_dict = {}
-                self.hour_domain_counter_holder[hour_key] = hour_counter_dict
-
-            hour_domain_count = hour_counter_dict.get(domain_name, 0)
-            hour_counter_dict[domain_name] = hour_domain_count + count
+    def _add_domain(self, time_key: str, domain_counter_holder_dict: Dict, count: int, domain_name: str):
+        counter_dict = domain_counter_holder_dict.get(time_key, None)
+        if counter_dict is None:
+            counter_dict = {}
+            self.domain_counter_holder_dict[time_key] = counter_dict
+        domain_count = counter_dict.get(domain_name, 0)
+        counter_dict[domain_name] = domain_count + count
 
     # 0 n log n - only for slice of 1 minute
     def _get_top_domains_last_minute(self, limit: int):
