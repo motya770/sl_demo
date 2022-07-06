@@ -41,18 +41,10 @@ class DomainCounterService:
             return None
         return domain_counter.get_top_domains(limit)
 
-    def get_top_domains_last_hour(self, limit: int):
+    def get_top_10_domains_hour(self) -> List:
         hour_key = DateUtils.round_hour_key()
-        return self._get_top_domains(limit, self.hour_domain_counter_holder, hour_key)
+        return self._get_top_domains(10, self.hour_domain_counter_holder, hour_key)
 
-    def get_top_domains_last_minute(self, limit: int):
+    def get_top_10_domains_minute(self) -> List:
         minute_key = DateUtils.round_minute_key()
-        return self._get_top_domains(limit, self.min_domain_counter_holder, minute_key)
-
-    # 0(1)
-    def get_top_10_domains_last_hour(self) -> List:
-        return self.get_top_domains_last_hour(10)
-
-    # 0(1)
-    def get_top_10_domains_last_minute(self) -> List:
-        return self.get_top_domains_last_minute(10)
+        return self._get_top_domains(10, self.min_domain_counter_holder, minute_key)

@@ -37,7 +37,7 @@ class DateUtils:
 
     @staticmethod
     def round_hour_key() -> str:
-        one_hour = datetime.timedelta(hour=1)
+        one_hour = datetime.timedelta(hours=1)
         key_date = datetime.datetime.utcnow()
         round_date = key_date - one_hour
         return round_date.strftime("%Y-%m-%d")

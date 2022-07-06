@@ -1,9 +1,12 @@
+import datetime
+
 from service import DomainCounterService
 from utils import DateUtils
 
 
 def test_add_domains():
-    values = {"timestamp": 1608102631, "domains": {"A": 3, "B": 4}}
+    timestamp = int(datetime.datetime.utcnow().timestamp())
+    values = {"timestamp": timestamp, "domains": {"A": 3, "B": 4}}
     timestamp = values["timestamp"]
     domains = values["domains"]
 
@@ -12,3 +15,6 @@ def test_add_domains():
 
     domain_counter_service = DomainCounterService()
     domain_counter_service.add_domains(timestamp=timestamp, domains=domains)
+
+    resp = domain_counter_service.get_top_10_domains_hour()
+    print(resp)
