@@ -10,26 +10,29 @@ class DomainCounterService:
     @inject
     def __init__(self):
         # dict by time with dict by domain name with count
-        self.min_domain_counter_holder = {str: DomainsCounter}
-        self.hour_domain_counter_holder = {str: DomainsCounter}
+        self.min_domain_counter_holder: Dict[str: DomainsCounter] = {}
+        self.hour_domain_counter_holder: Dict[str: DomainsCounter] = {}
 
     def add_domains(self, timestamp: int, domains: List[str]):
         min_key = DateUtils.current_minute_key(timestamp)
         hour_key = DateUtils.current_hour_key(timestamp)
 
         for domain_name, count in domains.items():
-            self._add_domain(time_key=min_key, domain_counter_holder_dict=self.min_domain_counter_holder,
+            self._add_domain(time_key=min_key, timestamp=timestamp,
+                             domain_counter_holder_dict=self.min_domain_counter_holder,
                              count=count, domain_name=domain_name)
 
-            self._add_domain(time_key=hour_key, domain_counter_holder_dict=self.hour_domain_counter_holder,
+            self._add_domain(time_key=hour_key, timestamp=timestamp,
+                             domain_counter_holder_dict=self.hour_domain_counter_holder,
                              count=count, domain_name=domain_name)
 
-    def _add_domain(self, time_key: str, domain_counter_holder_dict: Dict, count: int, domain_name: str):
+    def _add_domain(self, time_key: str, timestamp: int, domain_counter_holder_dict: Dict, count: int,
+                    domain_name: str):
         domains_counter: DomainsCounter = domain_counter_holder_dict.get(time_key, None)
         if domains_counter is None:
             domains_counter = DomainsCounter()
-            self.domain_counter_holder_dict[time_key] = domains_counter
-        domains_counter.update_domain_count(domain_name, count)
+            domain_counter_holder_dict[time_key] = domains_counter
+        domains_counter.update_all(timestamp=timestamp, domain_name=domain_name, count=count)
 
     # 0(1)
     def _get_top_domains(self, limit: int, domain_counter_holder_dict: Dict, time_key: str):

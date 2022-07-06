@@ -1,5 +1,6 @@
 sanic==22.3.2
 injector==0.17.0
 sortedcontainers==2.1.0
-pytest==3.6.4
+pytest==7.1.2
+
 

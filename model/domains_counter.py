@@ -1,48 +1,50 @@
 from queue import PriorityQueue
-from typing import List
+from typing import List, Dict
+
+from utils import DateUtils
 
 
 class DomainsCounter:
 
     def __init__(self):
-        # the value is hardcoded for performance but can be changed
-        # queue holds by count ordered for set of domains
-        # 542 -> google.com, facebook.com, 434 -> yahoo.com, bing.com, 3 -> baidu.com
-        # TODO add clean method for dict
-        self.priority_queue = PriorityQueue(maxsize=10)
         # domain name -> count
-        self.domains_counter_dict = {str: int}
+        self.domains_counter_dict: Dict[str: int] = {}
+        self._next_time_frame: Dict[int: Dict[str, int]] = {}
 
-    def update_domain_count(self, domain_name: str, count: int):
+    def update_all(self, timestamp: int, domain_name: str, count: int):
+        if DateUtils.is_bigger_than_round_minute(timestamp):
+            self._add_to_next_time_frame(timestamp, domain_name, count)
+        else:
+            self._update_from_next_time_frame()
+            self._update_domain_count(domain_name, count)
+
+    def _update_internal_structures(self, domain_name, count):
         prev_count = self.domains_counter_dict.get(domain_name, 0)
         new_count = prev_count + count
         self.domains_counter_dict[domain_name] = new_count
-        self._update_priority_queue(domain_name=domain_name, prev_count=prev_count, new_count=new_count)
 
-    def _update_priority_queue(self, domain_name: str, prev_count: int, new_count: int):
-        domains_set: set = self.priority_queue.get(-prev_count)
-        domains_set.remove(domain_name)
+    # saving values for a minute/hours that is not yet passed
+    def _add_to_next_time_frame(self, timestamp, domain_name, count):
+        self._next_time_frame[timestamp][domain_name] = count
 
-        updated_domains_set = self.priority_queue.get(-new_count)
-        if updated_domains_set is None:
-            updated_domains_set = set()
-            self.priority_queue.put(-new_count, updated_domains_set)
-
-        updated_domains_set.add(domain_name)
+    # adding round values after time has passed
+    # works fast because only not round values are added self.next_time_frame
+    def _update_from_next_time_frame(self):
+        for timestamp, domains_counter_dict in self._next_time_frame.items():
+            if not DateUtils.is_bigger_than_round_minute(timestamp):
+                for domain_name, count in domains_counter_dict.items():
+                    self._update_domain_count(timestamp, domain_name, count)
+                    del self._next_time_frame[timestamp]
 
     def get_top_domains(self, limit: int) -> List:
+        self._update_from_next_time_frame()
 
-        # copying for iteration 0(n) but only 10 elements
-        priority_queue = self.priority_queue.copy()
-        result = []
-        while not priority_queue.empty():
-            count, domains_set = priority_queue.get()
-            for domain_name in domains_set:
-                result.append({domain_name: count})
-                if len(result) == limit:
-                    break
-            if len(result) == limit:
-                break
-        return result
+        # top 10 domains by count
+        top_domains_by_count = PriorityQueue(limit)
+        for domain_name, count in self.domains_counter_dict.items():
+            top_domains_by_count.put((count, domain_name))
 
-
+        top_domains = []
+        while not top_domains_by_count.empty():
+            top_domains.append(top_domains_by_count.get())
+        return top_domains
