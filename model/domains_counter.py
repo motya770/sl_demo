@@ -50,9 +50,10 @@ class DomainsCounter:
         # top 10 domains by count
         top_domains_by_count = PriorityQueue(limit)
         for domain_name, count in self.domains_counter_dict.items():
-            top_domains_by_count.put((count, domain_name))
+            top_domains_by_count.put((count * -1, domain_name))
 
         top_domains = []
         while not top_domains_by_count.empty():
-            top_domains.append(top_domains_by_count.get())
+            count, domain_name = top_domains_by_count.get()
+            top_domains.append((domain_name, count * -1))
         return top_domains

@@ -6,6 +6,7 @@ from utils import DateUtils
 
 def test_add_domains():
     timestamp = int(datetime.datetime.utcnow().timestamp())
+    timestamp = timestamp - 60 * 60
     values = {"timestamp": timestamp, "domains": {"A": 3, "B": 4}}
     timestamp = values["timestamp"]
     domains = values["domains"]
